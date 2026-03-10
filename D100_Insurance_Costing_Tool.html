@@ -1,0 +1,2212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D100 SBEA · HMO Blue Advantage Family Coverage Costing Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0a1628;
+    --navy-mid: #132240;
+    --navy-light: #1e3a5f;
+    --teal: #00b4d8;
+    --teal-dark: #0096b7;
+    --gold: #f4a820;
+    --gold-light: #ffd166;
+    --red: #ef4444;
+    --green: #22c55e;
+    --green-dark: #16a34a;
+    --white: #f0f4f8;
+    --text-dim: #94a3b8;
+    --border: rgba(0,180,216,0.2);
+    --card-bg: rgba(19,34,64,0.85);
+    --card-border: rgba(0,180,216,0.25);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 60% 50% at 10% 20%, rgba(0,180,216,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 60% at 90% 80%, rgba(244,168,32,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(30,58,95,0.4) 0%, transparent 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .container {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .header-title h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(28px, 4vw, 48px);
+    line-height: 1.1;
+    color: var(--white);
+    letter-spacing: -0.5px;
+  }
+
+  .header-title h1 span {
+    color: var(--teal);
+    font-style: italic;
+  }
+
+  .header-title p {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    font-weight: 300;
+    letter-spacing: 0.3px;
+  }
+
+  .data-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(244,168,32,0.15);
+    border: 1px solid rgba(244,168,32,0.4);
+    color: var(--gold);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 100px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-top: 12px;
+  }
+
+  .data-badge::before {
+    content: '⚠';
+    font-size: 12px;
+  }
+
+  /* ===== SECTION LABELS ===== */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 28px;
+    backdrop-filter: blur(10px);
+  }
+
+  .card-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+
+  .card-subtitle {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  /* ===== GRID LAYOUTS ===== */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  @media (max-width: 900px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 600px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  /* ===== KPI STATS ===== */
+  .stat-box {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-sm);
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+  }
+
+  .stat-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent, var(--teal));
+  }
+
+  .stat-box.gold::before { background: var(--gold); }
+  .stat-box.red::before { background: var(--red); }
+  .stat-box.green::before { background: var(--green); }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 500;
+    color: var(--white);
+    line-height: 1;
+  }
+
+  .stat-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  /* ===== INPUTS ===== */
+  .input-group {
+    margin-bottom: 20px;
+  }
+
+  .input-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .input-group input[type="number"],
+  .input-group input[type="text"] {
+    width: 100%;
+    background: rgba(10,22,40,0.6);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 14px;
+    color: var(--white);
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input-group input:focus {
+    border-color: var(--teal);
+  }
+
+  .input-prefix-wrap {
+    position: relative;
+  }
+
+  .input-prefix-wrap::before {
+    content: attr(data-prefix);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--teal);
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    pointer-events: none;
+  }
+
+  .input-prefix-wrap input {
+    padding-left: 26px !important;
+  }
+
+  /* ===== SLIDER ===== */
+  .slider-wrap {
+    margin-top: 8px;
+  }
+
+  .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .slider-value-display {
+    font-family: 'DM Mono', monospace;
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--teal);
+    margin-bottom: 10px;
+    letter-spacing: -1px;
+  }
+
+  .slider-value-display span {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-left: 6px;
+    font-weight: 400;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(0,180,216,0.2);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--teal);
+    box-shadow: 0 0 12px rgba(0,180,216,0.5);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+
+  /* ===== PRESET BUTTONS ===== */
+  .preset-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  .preset-btn {
+    padding: 7px 14px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  .preset-btn:hover,
+  .preset-btn.active {
+    border-color: var(--teal);
+    color: var(--teal);
+    background: rgba(0,180,216,0.1);
+  }
+
+  /* ===== COMPARISON TABLE ===== */
+  .comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .comp-table th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comp-table th.center { text-align: center; }
+
+  .comp-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(0,180,216,0.08);
+    vertical-align: middle;
+  }
+
+  .comp-table tr:last-child td { border-bottom: none; }
+
+  .comp-table tr:hover td {
+    background: rgba(0,180,216,0.04);
+  }
+
+  .mono { font-family: 'DM Mono', monospace; }
+  .center { text-align: center; }
+
+  .pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .pill-teal { background: rgba(0,180,216,0.15); color: var(--teal); }
+  .pill-gold { background: rgba(244,168,32,0.15); color: var(--gold); }
+  .pill-red { background: rgba(239,68,68,0.15); color: #f87171; }
+  .pill-green { background: rgba(34,197,94,0.15); color: var(--green); }
+
+  /* ===== DELTA ===== */
+  .delta-pos { color: var(--green); font-family: 'DM Mono', monospace; }
+  .delta-neg { color: #f87171; font-family: 'DM Mono', monospace; }
+
+  /* ===== CHART CONTAINERS ===== */
+  .chart-wrap {
+    position: relative;
+    height: 260px;
+  }
+
+  .chart-wrap-tall {
+    position: relative;
+    height: 320px;
+  }
+
+  /* ===== SECTION SPACING ===== */
+  .section {
+    margin-bottom: 40px;
+  }
+
+  /* ===== DIVIDER ===== */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 40px 0;
+  }
+
+  /* ===== TOGGLE SWITCH ===== */
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .toggle {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    cursor: pointer;
+  }
+
+  .toggle input { display: none; }
+
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 100px;
+    background: rgba(0,180,216,0.2);
+    border: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+
+  .toggle input:checked + .toggle-track {
+    background: var(--teal);
+  }
+
+  .toggle-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--white);
+    transition: transform 0.2s;
+    pointer-events: none;
+  }
+
+  .toggle input:checked ~ .toggle-thumb {
+    transform: translateX(22px);
+  }
+
+  .toggle-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  /* ===== FOOTNOTE ===== */
+  .footnote {
+    background: rgba(244,168,32,0.08);
+    border: 1px solid rgba(244,168,32,0.25);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    font-size: 13px;
+    color: var(--gold-light);
+    line-height: 1.6;
+    margin-top: 16px;
+  }
+
+  .footnote strong {
+    color: var(--gold);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ===== INSIGHT BOX ===== */
+  .insight {
+    background: rgba(34,197,94,0.08);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    font-size: 14px;
+    color: #86efac;
+    line-height: 1.6;
+    margin-top: 16px;
+  }
+
+  .insight strong {
+    color: var(--green);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ===== TABS ===== */
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+
+  .tab-btn {
+    padding: 10px 18px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+    border-radius: 6px 6px 0 0;
+  }
+
+  .tab-btn:hover { color: var(--white); }
+  .tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ===== UPDATE BUTTON ===== */
+  .update-notice {
+    font-size: 11px;
+    color: var(--gold);
+    font-style: italic;
+    margin-top: 6px;
+    opacity: 0.8;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    header { padding: 32px 0 24px; }
+  }
+
+  /* ===== ANIMATE IN ===== */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section {
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .section:nth-child(1) { animation-delay: 0.05s; }
+  .section:nth-child(2) { animation-delay: 0.1s; }
+  .section:nth-child(3) { animation-delay: 0.15s; }
+  .section:nth-child(4) { animation-delay: 0.2s; }
+  .section:nth-child(5) { animation-delay: 0.25s; }
+
+  footer {
+    padding: 32px 0;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 48px;
+  }
+
+  /* ===== SNAPSHOT SECTION ===== */
+  .snapshot-hero {
+    background: linear-gradient(135deg, rgba(19,34,64,0.95) 0%, rgba(10,22,40,0.98) 100%);
+    border: 1px solid rgba(0,180,216,0.3);
+    border-radius: var(--radius);
+    padding: 36px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .snapshot-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,180,216,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .pool-explainer {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    background: rgba(244,168,32,0.06);
+    border: 1px solid rgba(244,168,32,0.2);
+    border-radius: var(--radius-sm);
+    padding: 20px 24px;
+    margin: 20px 0;
+  }
+
+  @media (max-width: 700px) {
+    .pool-explainer { grid-template-columns: 1fr; }
+  }
+
+  .pool-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .pool-step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: var(--navy);
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .pool-step-text {
+    font-size: 13px;
+    color: var(--gold-light);
+    line-height: 1.6;
+  }
+
+  .pool-step-text strong {
+    color: var(--gold);
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+  }
+
+  /* Plan menu cards */
+  .plan-group {
+    margin-bottom: 28px;
+  }
+
+  .plan-group-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .plan-name-badge {
+    font-family: 'DM Serif Display', serif;
+    font-size: 17px;
+    color: var(--white);
+  }
+
+  .enrollment-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--teal);
+    background: rgba(0,180,216,0.1);
+    padding: 3px 10px;
+    border-radius: 100px;
+    border: 1px solid rgba(0,180,216,0.25);
+  }
+
+  .single-paid-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--green);
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.2);
+    padding: 3px 10px;
+    border-radius: 100px;
+    margin-left: auto;
+  }
+
+  /* Tier rows */
+  .tier-rows { display: flex; flex-direction: column; gap: 8px; }
+
+  .tier-row {
+    display: grid;
+    grid-template-columns: 180px 80px 1fr;
+    gap: 12px;
+    align-items: center;
+    background: rgba(10,22,40,0.5);
+    border: 1px solid rgba(0,180,216,0.1);
+    border-radius: 10px;
+    padding: 14px 18px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .tier-row:hover {
+    border-color: rgba(0,180,216,0.3);
+    background: rgba(0,180,216,0.04);
+  }
+
+  .tier-row.highlight-family {
+    border-color: rgba(0,180,216,0.35);
+    background: rgba(0,180,216,0.06);
+  }
+
+  .tier-row.zero-enrolled {
+    opacity: 0.55;
+  }
+
+  .tier-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white);
+  }
+
+  .tier-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  .tier-count.has-people { color: var(--teal); }
+
+  .cost-breakdown {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+
+  .cost-segment {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 14px;
+    border-right: 1px solid rgba(0,180,216,0.1);
+    min-width: 90px;
+  }
+
+  .cost-segment:last-child { border-right: none; }
+
+  .cost-seg-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    white-space: nowrap;
+  }
+
+  .cost-seg-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .cost-seg-sub {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    white-space: nowrap;
+  }
+
+  .cost-seg-value.district { color: var(--gold); }
+  .cost-seg-value.pool-col { color: #a78bfa; }
+  .cost-seg-value.employee { color: #f87171; }
+  .cost-seg-value.employee.free { color: var(--green); }
+  .cost-seg-value.per-check { color: var(--white); }
+
+  .waive-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 18px;
+    background: rgba(10,22,40,0.4);
+    border: 1px dashed rgba(148,163,184,0.2);
+    border-radius: 10px;
+    margin-top: 8px;
+  }
+
+  .waive-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    color: var(--text-dim);
+  }
+
+  .pool-summary-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+    padding: 16px 20px;
+    background: rgba(167,139,250,0.06);
+    border: 1px solid rgba(167,139,250,0.2);
+    border-radius: var(--radius-sm);
+  }
+
+  @media (max-width: 700px) {
+    .pool-summary-bar { grid-template-columns: 1fr 1fr; }
+    .tier-row { grid-template-columns: 1fr; }
+    .cost-breakdown { gap: 8px; }
+  }
+
+  .pool-stat {
+    text-align: center;
+  }
+
+  .pool-stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #a78bfa;
+    margin-bottom: 6px;
+  }
+
+  .pool-stat-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    color: var(--white);
+  }
+
+  .pool-stat-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+
+  /* Legend */
+  .cost-legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: rgba(10,22,40,0.4);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .unknown-premium {
+    font-size: 12px;
+    color: var(--gold);
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-inner">
+      <div class="header-title">
+        <h1>D100 SBEA <span>Insurance</span> Costing Tool</h1>
+        <p>HMO Blue Advantage Family Plan · Collective Bargaining Analysis · 2025–2026</p>
+        <div class="data-badge">Sample Data — Update with Actual D100 Premiums</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">Contract Expiry</div>
+        <div style="font-family:'DM Mono',monospace;font-size:20px;color:var(--gold);">June 2026</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">Negotiations Open</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- SNAPSHOT SECTION -->
+  <div class="snapshot-hero">
+    <div class="section-label" style="margin-bottom:20px;">Current Insurance Snapshot · 2025–2026</div>
+
+    <!-- POOL EXPLAINER -->
+    <div class="pool-explainer">
+      <div class="pool-step">
+        <div class="pool-step-num">1</div>
+        <div class="pool-step-text">
+          <strong>The District's Pool Commitment</strong>
+          Each year, the Board sets aside <strong style="color:var(--gold)">$150,000</strong> — a fixed pot of money dedicated to helping teachers afford family-level health coverage.
+        </div>
+      </div>
+      <div class="pool-step">
+        <div class="pool-step-num">2</div>
+        <div class="pool-step-text">
+          <strong>Divided Equally… For Better or Worse</strong>
+          That $150,000 is split equally among <em>every</em> teacher enrolled in any coverage tier above single (Employee+Spouse, Employee+Children, Family). More enrollees = smaller share per person.
+        </div>
+      </div>
+      <div class="pool-step">
+        <div class="pool-step-num">3</div>
+        <div class="pool-step-text">
+          <strong>The Problem</strong>
+          With <strong style="color:var(--gold)">53 teachers</strong> on non-single coverage tiers pulling from the pool in 2025–26, each receives <strong style="color:var(--gold)">$235.85/month</strong> ($2,830/year). This applies to Employee+Spouse, Employee+Children, and Family tiers across all plans. More enrollees = smaller share per person.
+        </div>
+      </div>
+    </div>
+
+    <!-- POOL SUMMARY BAR -->
+    <div class="pool-summary-bar">
+      <div class="pool-stat">
+        <div class="pool-stat-label">Total Pool</div>
+        <div class="pool-stat-value">$150,000</div>
+        <div class="pool-stat-sub">Annual district commitment</div>
+      </div>
+      <div class="pool-stat">
+        <div class="pool-stat-label">Pool Participants</div>
+        <div class="pool-stat-value">53 teachers</div>
+        <div class="pool-stat-sub">All non-single tiers</div>
+      </div>
+      <div class="pool-stat">
+        <div class="pool-stat-label">Per Teacher / Year</div>
+        <div class="pool-stat-value">$2,830.19</div>
+        <div class="pool-stat-sub">Pool benefit (annual)</div>
+      </div>
+      <div class="pool-stat">
+        <div class="pool-stat-label">Per Teacher / Month</div>
+        <div class="pool-stat-value">$235.85</div>
+        <div class="pool-stat-sub">Pool benefit (monthly)</div>
+      </div>
+    </div>
+
+    <div style="height:28px"></div>
+
+    <!-- LEGEND -->
+    <div class="cost-legend">
+      <span style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-right:4px;">Cost columns:</span>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>District Pays (single premium)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div>Pool Subsidy (from $150K pool)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div>Employee Pays (out-of-pocket)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--white)"></div>Per Paycheck (of employee cost)</div>
+      <div class="legend-item" style="margin-left:auto"><span style="color:var(--teal);font-size:11px">★ = Focus of proposed change</span></div>
+    </div>
+
+    <!-- ===== PPO ===== -->
+    <div class="plan-group">
+      <div class="plan-group-header">
+        <div class="plan-name-badge">PPO (Blue Cross Blue Shield)</div>
+        <div class="enrollment-count">142 enrolled</div>
+        <div class="single-paid-badge">✓ Single: 100% District Paid</div>
+      </div>
+      <div class="tier-rows">
+        <!-- Employee Single -->
+        <div class="tier-row">
+          <div><div class="tier-label">Employee (Single)</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px;">$1,068.06/month premium</div></div>
+          <div class="tier-count has-people">135</div>
+          <div class="cost-breakdown">
+            <div class="cost-segment"><div class="cost-seg-label">District</div><div class="cost-seg-value district">$1,068.06</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Pool</div><div class="cost-seg-value pool-col">—</div><div class="cost-seg-sub">N/A</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Employee</div><div class="cost-seg-value employee free">$0.00</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">/ Paycheck</div><div class="cost-seg-value per-check">$0.00</div><div class="cost-seg-sub">of 24</div></div>
+          </div>
+        </div>
+        <!-- E&S -->
+        <div class="tier-row">
+          <div><div class="tier-label">Employee + Spouse</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px;">$2,050.70/month premium</div></div>
+          <div class="tier-count has-people">1</div>
+          <div class="cost-breakdown">
+            <div class="cost-segment"><div class="cost-seg-label">District</div><div class="cost-seg-value district">$1,068.06</div><div class="cost-seg-sub">single equiv.</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Pool</div><div class="cost-seg-value pool-col">$235.85</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Employee</div><div class="cost-seg-value employee">$746.79</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">/ Paycheck</div><div class="cost-seg-value per-check">$373.40</div><div class="cost-seg-sub">of 24</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Annual EE</div><div class="cost-seg-value employee">$8,961</div><div class="cost-seg-sub">per year</div></div>
+          </div>
+        </div>
+        <!-- E&C -->
+        <div class="tier-row">
+          <div><div class="tier-label">Employee + Child(ren)</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px;">$1,997.29/month premium</div></div>
+          <div class="tier-count has-people">6</div>
+          <div class="cost-breakdown">
+            <div class="cost-segment"><div class="cost-seg-label">District</div><div class="cost-seg-value district">$1,068.06</div><div class="cost-seg-sub">single equiv.</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Pool</div><div class="cost-seg-value pool-col">$235.85</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Employee</div><div class="cost-seg-value employee">$693.38</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">/ Paycheck</div><div class="cost-seg-value per-check">$346.69</div><div class="cost-seg-sub">of 24</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Annual EE</div><div class="cost-seg-value employee">$8,321</div><div class="cost-seg-sub">per year</div></div>
+          </div>
+        </div>
+        <!-- Family -->
+        <div class="tier-row zero-enrolled">
+          <div><div class="tier-label">Family</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px;">$3,312.16/month premium</div></div>
+          <div class="tier-count">0</div>
+          <div class="cost-breakdown">
+            <div class="cost-segment"><div class="cost-seg-label">District</div><div class="cost-seg-value district">$1,068.06</div><div class="cost-seg-sub">single equiv.</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Pool</div><div class="cost-seg-value pool-col">$235.85</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Employee</div><div class="cost-seg-value employee">$2,008.25</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">/ Paycheck</div><div class="cost-seg-value per-check">$1,004.13</div><div class="cost-seg-sub">of 24</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Annual EE</div><div class="cost-seg-value employee">$24,099</div><div class="cost-seg-sub">per year</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PPO BLUE CHOICE ===== -->
+    <div class="plan-group">
+      <div class="plan-group-header">
+        <div class="plan-name-badge">PPO Blue Choice</div>
+        <div class="enrollment-count">11 enrolled</div>
+        <div class="single-paid-badge">✓ Single: 100% District Paid</div>
+      </div>
+      <div class="tier-rows">
+        <div class="tier-row">
+          <div><div class="tier-label">Employee (Single)</div><div class="unknown-premium">★ Premium: update with actual D100 data</div></div>
+          <div class="tier-count has-people">6</div>
+          <div class="cost-breakdown"><div class="cost-seg-label" style="color:var(--gold);font-size:12px;padding:0 14px;">District pays full single. Employee pays $0.00</div></div>
+        </div>
+        <div class="tier-row">
+          <div><div class="tier-label">Employee + Spouse</div><div class="unknown-premium">★ Premium: update with actual D100 data</div></div>
+          <div class="tier-count has-people">1</div>
+          <div class="cost-breakdown"><div style="font-size:12px;color:var(--text-dim);padding:0 14px;">Pool subsidy applies · Actual cost depends on real premium</div></div>
+        </div>
+        <div class="tier-row">
+          <div><div class="tier-label">Employee + Child(ren)</div><div class="unknown-premium">★ Premium: update with actual D100 data</div></div>
+          <div class="tier-count has-people">4</div>
+          <div class="cost-breakdown"><div style="font-size:12px;color:var(--text-dim);padding:0 14px;">Pool subsidy applies · Actual cost depends on real premium</div></div>
+        </div>
+        <div class="tier-row zero-enrolled">
+          <div><div class="tier-label">Family</div><div class="unknown-premium">★ Premium: update with actual D100 data</div></div>
+          <div class="tier-count">0</div>
+          <div class="cost-breakdown"><div style="font-size:12px;color:var(--text-dim);padding:0 14px;">No current enrollment</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== HMO ILLINOIS ===== -->
+    <div class="plan-group">
+      <div class="plan-group-header">
+        <div class="plan-name-badge">HMO Illinois</div>
+        <div class="enrollment-count">41 enrolled</div>
+        <div class="single-paid-badge">✓ Single: 100% District Paid</div>
+      </div>
+      <div class="tier-rows">
+        <div class="tier-row">
+          <div><div class="tier-label">Employee (Single)</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px;">$754.17/month premium</div></div>
+          <div class="tier-count has-people">28</div>
+          <div class="cost-breakdown">
+            <div class="cost-segment"><div class="cost-seg-label">District</div><div class="cost-seg-value district">$754.17</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Pool</div><div class="cost-seg-value pool-col">—</div><div class="cost-seg-sub">N/A</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Employee</div><div class="cost-seg-value employee free">$0.00</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">/ Paycheck</div><div class="cost-seg-value per-check">$0.00</div><div class="cost-seg-sub">of 24</div></div>
+          </div>
+        </div>
+        <div class="tier-row">
+          <div><div class="tier-label">Employee + Spouse</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px;">$1,448.02/month premium</div></div>
+          <div class="tier-count has-people">2</div>
+          <div class="cost-breakdown">
+            <div class="cost-segment"><div class="cost-seg-label">District</div><div class="cost-seg-value district">$754.17</div><div class="cost-seg-sub">single equiv.</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Pool</div><div class="cost-seg-value pool-col">$235.85</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Employee</div><div class="cost-seg-value employee">$458.00</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">/ Paycheck</div><div class="cost-seg-value per-check">$229.00</div><div class="cost-seg-sub">of 24</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Annual EE</div><div class="cost-seg-value employee">$5,496</div><div class="cost-seg-sub">per year</div></div>
+          </div>
+        </div>
+        <div class="tier-row">
+          <div><div class="tier-label">Employee + Child(ren)</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px;">$1,410.30/month premium</div></div>
+          <div class="tier-count has-people">9</div>
+          <div class="cost-breakdown">
+            <div class="cost-segment"><div class="cost-seg-label">District</div><div class="cost-seg-value district">$754.17</div><div class="cost-seg-sub">single equiv.</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Pool</div><div class="cost-seg-value pool-col">$235.85</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Employee</div><div class="cost-seg-value employee">$420.28</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">/ Paycheck</div><div class="cost-seg-value per-check">$210.14</div><div class="cost-seg-sub">of 24</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Annual EE</div><div class="cost-seg-value employee">$5,043</div><div class="cost-seg-sub">per year</div></div>
+          </div>
+        </div>
+        <div class="tier-row">
+          <div><div class="tier-label">Family</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px;">$2,165.09/month premium</div></div>
+          <div class="tier-count has-people">2</div>
+          <div class="cost-breakdown">
+            <div class="cost-segment"><div class="cost-seg-label">District</div><div class="cost-seg-value district">$754.17</div><div class="cost-seg-sub">single equiv.</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Pool</div><div class="cost-seg-value pool-col">$235.85</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Employee</div><div class="cost-seg-value employee">$1,175.07</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">/ Paycheck</div><div class="cost-seg-value per-check">$587.54</div><div class="cost-seg-sub">of 24</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Annual EE</div><div class="cost-seg-value employee">$14,101</div><div class="cost-seg-sub">per year</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== HMO BLUE ADVANTAGE ===== -->
+    <div class="plan-group">
+      <div class="plan-group-header">
+        <div class="plan-name-badge">HMO Blue Advantage ★</div>
+        <div class="enrollment-count">76 enrolled</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--teal);background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);padding:3px 10px;border-radius:100px;margin-left:8px;">Focus of Proposed Change</div>
+        <div class="single-paid-badge" style="margin-left:auto;">✓ Single: 100% District Paid</div>
+      </div>
+      <div class="tier-rows">
+        <div class="tier-row">
+          <div><div class="tier-label">Employee (Single)</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px;">$685.00/month premium</div></div>
+          <div class="tier-count has-people">46</div>
+          <div class="cost-breakdown">
+            <div class="cost-segment"><div class="cost-seg-label">District</div><div class="cost-seg-value district">$685.00</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Pool</div><div class="cost-seg-value pool-col">—</div><div class="cost-seg-sub">N/A</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Employee</div><div class="cost-seg-value employee free">$0.00</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">/ Paycheck</div><div class="cost-seg-value per-check">$0.00</div><div class="cost-seg-sub">of 24</div></div>
+          </div>
+        </div>
+        <div class="tier-row">
+          <div><div class="tier-label">Employee + Spouse</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px;">$1,315.21/month premium</div></div>
+          <div class="tier-count has-people">7</div>
+          <div class="cost-breakdown">
+            <div class="cost-segment"><div class="cost-seg-label">District</div><div class="cost-seg-value district">$685.00</div><div class="cost-seg-sub">single equiv.</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Pool</div><div class="cost-seg-value pool-col">$235.85</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Employee</div><div class="cost-seg-value employee">$394.36</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">/ Paycheck</div><div class="cost-seg-value per-check">$197.18</div><div class="cost-seg-sub">of 24</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Annual EE</div><div class="cost-seg-value employee">$4,732</div><div class="cost-seg-sub">per year</div></div>
+          </div>
+        </div>
+        <div class="tier-row">
+          <div><div class="tier-label">Employee + Child(ren)</div><div style="font-size:11px;color:var(--text-dim);margin-top:3px;">$1,281.01/month premium</div></div>
+          <div class="tier-count has-people">10</div>
+          <div class="cost-breakdown">
+            <div class="cost-segment"><div class="cost-seg-label">District</div><div class="cost-seg-value district">$685.00</div><div class="cost-seg-sub">single equiv.</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Pool</div><div class="cost-seg-value pool-col">$235.85</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Employee</div><div class="cost-seg-value employee">$360.16</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">/ Paycheck</div><div class="cost-seg-value per-check">$180.08</div><div class="cost-seg-sub">of 24</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Annual EE</div><div class="cost-seg-value employee">$4,322</div><div class="cost-seg-sub">per year</div></div>
+          </div>
+        </div>
+        <!-- HMO BA FAMILY — the star of the show -->
+        <div class="tier-row highlight-family">
+          <div>
+            <div class="tier-label" style="color:var(--teal);">Family ★ <span style="font-size:11px;font-weight:400;color:var(--teal);opacity:0.8;">(proposed change target)</span></div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:3px;">$1,923.18/month premium</div>
+          </div>
+          <div class="tier-count has-people" style="color:var(--teal);font-size:15px;font-weight:700;">13</div>
+          <div class="cost-breakdown">
+            <div class="cost-segment"><div class="cost-seg-label">District</div><div class="cost-seg-value district">$685.00</div><div class="cost-seg-sub">single equiv.</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Pool</div><div class="cost-seg-value pool-col">$235.85</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Employee</div><div class="cost-seg-value employee" style="font-size:16px;">$1,002.33</div><div class="cost-seg-sub">per month</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">/ Paycheck</div><div class="cost-seg-value per-check" style="font-size:16px;">$501.17</div><div class="cost-seg-sub">of 24</div></div>
+            <div class="cost-segment"><div class="cost-seg-label">Annual EE</div><div class="cost-seg-value employee" style="font-size:16px;">$12,028</div><div class="cost-seg-sub">per year</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WAIVE ROW -->
+    <div class="waive-row">
+      <div style="font-size:14px;font-weight:600;color:var(--text-dim);">Waiving Coverage</div>
+      <div class="waive-count">58 teachers</div>
+      <div style="font-size:13px;color:var(--text-dim);">Opted out of district health insurance. These teachers receive up to <strong style="color:var(--white)">$500/year</strong> reimbursement for qualified medical expenses (Art. XV §D.6).</div>
+    </div>
+
+    <!-- ENROLLMENT VISUAL -->
+    <div style="margin-top:28px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;">Enrollment at a Glance — 328 Total Eligible Teachers</div>
+      <div style="display:flex;height:36px;border-radius:8px;overflow:hidden;gap:2px;">
+        <div style="flex:135;background:rgba(59,130,246,0.7);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;padding:0 6px;" title="PPO Single: 135">PPO 135</div>
+        <div style="flex:6;background:rgba(59,130,246,0.45);" title="PPO E&S+E&C: 7"></div>
+        <div style="flex:11;background:rgba(99,102,241,0.7);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;padding:0 6px;" title="PPO Blue Choice: 11">BC 11</div>
+        <div style="flex:28;background:rgba(20,184,166,0.65);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;padding:0 4px;" title="HMO IL Single: 28">IL 28</div>
+        <div style="flex:13;background:rgba(20,184,166,0.4);" title="HMO IL non-single: 13"></div>
+        <div style="flex:46;background:rgba(0,180,216,0.8);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;padding:0 4px;" title="HMO BA Single: 46">BA 46</div>
+        <div style="flex:17;background:rgba(0,180,216,0.5);" title="HMO BA E&S+E&C: 17"></div>
+        <div style="flex:13;background:rgba(0,180,216,1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;padding:0 4px;border:2px solid rgba(255,255,255,0.3);" title="HMO BA Family: 13 ★">★13</div>
+        <div style="flex:58;background:rgba(148,163,184,0.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;padding:0 6px;" title="Waiving: 58">Waive 58</div>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;">
+        <span style="font-size:11px;color:rgba(59,130,246,0.9);">■ PPO</span>
+        <span style="font-size:11px;color:rgba(99,102,241,0.9);">■ PPO Blue Choice</span>
+        <span style="font-size:11px;color:rgba(20,184,166,0.9);">■ HMO Illinois</span>
+        <span style="font-size:11px;color:rgba(0,180,216,1);">■ HMO Blue Advantage</span>
+        <span style="font-size:11px;color:rgba(0,180,216,1);font-weight:700;">★ HMO BA Family (13) — proposed change</span>
+        <span style="font-size:11px;color:rgba(148,163,184,0.6);">■ Waiving</span>
+      </div>
+    </div>
+
+  </div><!-- /snapshot-hero -->
+
+  <!-- SECTION 1: DATA INPUTS -->
+  <div class="section">
+    <div class="section-label">Step 1 · Configure Inputs</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Premium & Enrollment Data</div>
+        <div class="card-subtitle">Update these values with actual D100 figures when available. All calculations update automatically.</div>
+
+        <div class="input-group">
+          <label>HMO Blue Advantage Family — Monthly Premium ($)</label>
+          <div class="input-prefix-wrap" data-prefix="$">
+            <input type="number" id="inp-hmoFamPremium" value="1923.18" step="0.01" oninput="recalcAll()">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Annual Family Pool — Total Board Contribution ($)</label>
+          <div class="input-prefix-wrap" data-prefix="$">
+            <input type="number" id="inp-poolTotal" value="150000" step="1000" oninput="recalcAll()">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Total Family Plan Teachers (ALL plans, pulling from pool)</label>
+          <input type="number" id="inp-totalFam" value="53" step="1" oninput="recalcAll()">
+        </div>
+
+        <div class="input-group">
+          <label>HMO Blue Advantage Family — # of Enrolled Teachers</label>
+          <input type="number" id="inp-hmoFamCount" value="13" step="1" oninput="recalcAll()">
+        </div>
+
+        <div class="input-group">
+          <label>Paychecks Per Year</label>
+          <input type="number" id="inp-pays" value="24" step="1" oninput="recalcAll()">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Other Family Plan Premiums</div>
+        <div class="card-subtitle">These plans will continue using the pool system. Their per-teacher pool benefit changes when HMO Blue Advantage Family teachers are carved out.</div>
+
+        <div class="input-group">
+          <label>PPO Family — Monthly Premium ($)</label>
+          <div class="input-prefix-wrap" data-prefix="$">
+            <input type="number" id="inp-ppoFam" value="3312.16" step="0.01" oninput="recalcAll()">
+          </div>
+        </div>
+        <div class="input-group">
+          <label>PPO Family — # Enrolled Teachers</label>
+          <input type="number" id="inp-ppoFamCount" value="0" step="1" oninput="recalcAll()">
+        </div>
+
+        <div class="input-group">
+          <label>HMO Illinois Family — Monthly Premium ($)</label>
+          <div class="input-prefix-wrap" data-prefix="$">
+            <input type="number" id="inp-hmoILFam" value="2165.09" step="0.01" oninput="recalcAll()">
+          </div>
+        </div>
+        <div class="input-group">
+          <label>HMO Illinois Family — # Enrolled Teachers</label>
+          <input type="number" id="inp-hmoILFamCount" value="2" step="1" oninput="recalcAll()">
+        </div>
+
+        <div class="footnote">
+          <strong>⚠ Note on enrollment counts</strong>
+          The 53-teacher pool includes all tiers above single: Employee+Spouse, Employee+Children, and Family — across all plans. The 13 HMO Blue Advantage "Family" tier teachers are specifically the focus of the proposed change. Remaining 40 pool participants are modeled in Section 4.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: SCENARIO BUILDER -->
+  <div class="section">
+    <div class="section-label">Step 2 · Build Your Scenario</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">District / Employee Split</div>
+        <div class="card-subtitle">Drag the slider or click a preset to set the district's share of the HMO Blue Advantage Family premium.</div>
+
+        <div class="slider-value-display">
+          <span id="distPctDisplay">80</span>% <span>District · <span id="eePctDisplay">20</span>% Employee</span>
+        </div>
+
+        <div class="slider-wrap">
+          <div class="slider-labels"><span>0% District</span><span>100% District</span></div>
+          <input type="range" id="splitSlider" min="50" max="100" value="80" step="1" oninput="onSlider(this.value)">
+        </div>
+
+        <div class="preset-btns">
+          <button class="preset-btn" onclick="setPreset(100)">100/0</button>
+          <button class="preset-btn" onclick="setPreset(95)">95/5</button>
+          <button class="preset-btn" onclick="setPreset(90)">90/10</button>
+          <button class="preset-btn active" onclick="setPreset(80)">80/20</button>
+          <button class="preset-btn" onclick="setPreset(75)">75/25</button>
+          <button class="preset-btn" onclick="setPreset(70)">70/30</button>
+          <button class="preset-btn" onclick="setPreset(60)">60/40</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Enrollment Shift Projector</div>
+        <div class="card-subtitle">Model how many teachers might move to HMO Blue Advantage Family if it becomes more affordable.</div>
+
+        <div class="input-group">
+          <label>Projected HMO Blue Advantage Family enrollment (new)</label>
+          <input type="number" id="inp-hmoFamCountNew" value="20" step="1" oninput="recalcAll()">
+        </div>
+
+        <div class="input-group">
+          <label>Estimated remaining pool teachers (non-HMO BA)</label>
+          <input type="number" id="inp-remainPoolNew" value="33" step="1" oninput="recalcAll()">
+        </div>
+
+        <div class="insight">
+          <strong>💡 The Win-Win Logic</strong>
+          As HMO Blue Advantage Family becomes the most affordable option via a set % split, teachers on other plans may switch. Fewer teachers then pull from the $150K pool, so each remaining pool teacher gets a larger benefit. Both groups win.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: CORE RESULTS — HMO BLUE ADVANTAGE FAMILY -->
+  <div class="section">
+    <div class="section-label">Section 3 · HMO Blue Advantage Family — Cost Breakdown</div>
+
+    <div class="grid-4" id="kpi-row" style="margin-bottom:24px;">
+      <div class="stat-box">
+        <div class="stat-label">Monthly Premium (Total)</div>
+        <div class="stat-value mono" id="kpi-totalPremium">—</div>
+        <div class="stat-sub">Per teacher, full plan cost</div>
+      </div>
+      <div class="stat-box gold">
+        <div class="stat-label">District Pays / Month</div>
+        <div class="stat-value mono" id="kpi-distMonth">—</div>
+        <div class="stat-sub" id="kpi-distPct">—</div>
+      </div>
+      <div class="stat-box red">
+        <div class="stat-label">Employee Pays / Month</div>
+        <div class="stat-value mono" id="kpi-eeMonth">—</div>
+        <div class="stat-sub" id="kpi-eePct">—</div>
+      </div>
+      <div class="stat-box green">
+        <div class="stat-label">Employee Per Paycheck</div>
+        <div class="stat-value mono" id="kpi-eePaycheck">—</div>
+        <div class="stat-sub" id="kpi-paysSub">—</div>
+      </div>
+    </div>
+
+    <!-- Tabs for detail views -->
+    <div class="card">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('tab-current')">Current vs. Proposed</button>
+        <button class="tab-btn" onclick="switchTab('tab-scenarios')">All Scenarios</button>
+        <button class="tab-btn" onclick="switchTab('tab-chart')">Charts</button>
+      </div>
+
+      <!-- TAB: CURRENT vs PROPOSED -->
+      <div class="tab-panel active" id="tab-current">
+        <div class="grid-2">
+          <div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin-bottom:16px;">Current System (Pool)</div>
+            <table class="comp-table">
+              <tr>
+                <td style="color:var(--text-dim)">Pool Size</td>
+                <td class="mono" id="cur-poolSize">$150,000</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Pool Participants</td>
+                <td class="mono" id="cur-poolPart">53 teachers</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Pool Benefit / Teacher / Year</td>
+                <td class="mono" id="cur-poolBenYear">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Pool Benefit / Month</td>
+                <td class="mono" id="cur-poolBenMonth">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Full Annual Premium</td>
+                <td class="mono" id="cur-annualPremium">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Teacher Pays / Year</td>
+                <td class="mono" style="color:#f87171" id="cur-eeYear">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Teacher Pays / Month</td>
+                <td class="mono" style="color:#f87171" id="cur-eeMonth">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Teacher Pays / Paycheck</td>
+                <td class="mono" style="color:#f87171" id="cur-eePaycheck">—</td>
+              </tr>
+            </table>
+          </div>
+
+          <div>
+            <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--teal);margin-bottom:16px;">Proposed System (% Split)</div>
+            <table class="comp-table">
+              <tr>
+                <td style="color:var(--text-dim)">District % of Premium</td>
+                <td class="mono" id="prop-distPct">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Employee % of Premium</td>
+                <td class="mono" id="prop-eePct">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Full Annual Premium</td>
+                <td class="mono" id="prop-annualPremium">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">District Pays / Year</td>
+                <td class="mono" style="color:var(--gold)" id="prop-distYear">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">District Pays / Month</td>
+                <td class="mono" style="color:var(--gold)" id="prop-distMonth">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Teacher Pays / Year</td>
+                <td class="mono" style="color:var(--green)" id="prop-eeYear">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Teacher Pays / Month</td>
+                <td class="mono" style="color:var(--green)" id="prop-eeMonth">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Teacher Pays / Paycheck</td>
+                <td class="mono" style="color:var(--green)" id="prop-eePaycheck">—</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <div style="margin-top:24px;padding:20px;background:rgba(0,180,216,0.06);border:1px solid rgba(0,180,216,0.15);border-radius:var(--radius-sm);">
+          <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--teal);margin-bottom:16px;">Teacher Savings / Cost Comparison</div>
+          <div class="grid-3">
+            <div>
+              <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">Annual Savings (per teacher)</div>
+              <div class="mono" id="delta-year" style="font-size:22px;color:var(--green);">—</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">Monthly Savings (per teacher)</div>
+              <div class="mono" id="delta-month" style="font-size:22px;color:var(--green);">—</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">Per Paycheck Savings</div>
+              <div class="mono" id="delta-paycheck" style="font-size:22px;color:var(--green);">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: ALL SCENARIOS -->
+      <div class="tab-panel" id="tab-scenarios">
+        <div style="font-size:13px;color:var(--text-dim);margin-bottom:20px;">Employee cost comparison across all split scenarios. <em>Current pool system shown for reference.</em></div>
+        <table class="comp-table" id="scenarios-table">
+          <thead>
+            <tr>
+              <th>Split (Dist/Empl)</th>
+              <th>Dist Monthly</th>
+              <th>Empl Monthly</th>
+              <th>Empl Annual</th>
+              <th>Empl / Paycheck</th>
+              <th>vs. Current Pool</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="scenarios-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- TAB: CHARTS -->
+      <div class="tab-panel" id="tab-chart">
+        <div class="grid-2">
+          <div>
+            <div style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">Employee monthly cost by split scenario</div>
+            <div class="chart-wrap-tall"><canvas id="chart-bar-scenarios"></canvas></div>
+          </div>
+          <div>
+            <div style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">Premium split — proposed scenario</div>
+            <div class="chart-wrap"><canvas id="chart-doughnut"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: DISTRICT COST IMPACT -->
+  <div class="section">
+    <div class="section-label">Section 4 · District Budget Impact</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">District Expenditure: Current vs. Proposed</div>
+        <div class="card-subtitle">HMO Blue Advantage Family — district cost under both systems at current enrollment (13 teachers)</div>
+
+        <div class="grid-2" style="margin-bottom:20px;">
+          <div class="stat-box gold">
+            <div class="stat-label">Current (Pool Allocation)</div>
+            <div class="stat-value mono" id="dist-currentTotal">—</div>
+            <div class="stat-sub">Annual district spend (pool share + direct)</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Proposed (% × 13 teachers)</div>
+            <div class="stat-value mono" id="dist-proposedTotal">—</div>
+            <div class="stat-sub" id="dist-proposedSub">Annual district spend</div>
+          </div>
+        </div>
+
+        <div class="chart-wrap"><canvas id="chart-dist-compare"></canvas></div>
+
+        <div id="dist-delta-note" class="footnote" style="margin-top:16px;">
+          <strong>Budget Delta Note</strong>
+          <span id="dist-delta-text">Calculating...</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Pool Ripple Effect: Remaining Plans</div>
+        <div class="card-subtitle">After HMO Blue Advantage Family is carved out, the $150K pool serves fewer teachers — improving the per-teacher benefit for those who remain.</div>
+
+        <div class="grid-2" style="margin-bottom:20px;">
+          <div class="stat-box">
+            <div class="stat-label">Old Pool Benefit/Teacher</div>
+            <div class="stat-value mono" id="pool-old">—</div>
+            <div class="stat-sub">Annual · 53 participants</div>
+          </div>
+          <div class="stat-box green">
+            <div class="stat-label">New Pool Benefit/Teacher</div>
+            <div class="stat-value mono" id="pool-new">—</div>
+            <div class="stat-sub" id="pool-new-sub">Annual · remaining pool</div>
+          </div>
+        </div>
+
+        <div class="chart-wrap"><canvas id="chart-pool-ripple"></canvas></div>
+
+        <div class="insight" style="margin-top:16px;">
+          <strong>✅ Win-Win Mechanism</strong>
+          <span id="pool-ripple-text">Calculating...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: ENROLLMENT SHIFT MODELING -->
+  <div class="section">
+    <div class="section-label">Section 5 · Enrollment Shift Scenario</div>
+    <div class="card">
+      <div class="card-title">What Happens When More Teachers Switch to HMO Blue Advantage Family?</div>
+      <div class="card-subtitle">Model projected enrollment changes and their downstream impact on both the HMO BA Family group and the remaining pool participants.</div>
+
+      <div class="grid-4" style="margin-bottom:24px;">
+        <div class="stat-box">
+          <div class="stat-label">Current HMO BA Fam Enrolled</div>
+          <div class="stat-value mono" id="shift-currentEnroll">13</div>
+          <div class="stat-sub">At current contract</div>
+        </div>
+        <div class="stat-box teal">
+          <div class="stat-label">Projected New Enrolled</div>
+          <div class="stat-value mono" id="shift-newEnroll">—</div>
+          <div class="stat-sub">Under proposed system</div>
+        </div>
+        <div class="stat-box gold">
+          <div class="stat-label">District Cost Increase</div>
+          <div class="stat-value mono" id="shift-distIncrease">—</div>
+          <div class="stat-sub">Annual, vs. current</div>
+        </div>
+        <div class="stat-box green">
+          <div class="stat-label">Pool Benefit (Remaining)</div>
+          <div class="stat-value mono" id="shift-poolBenefit">—</div>
+          <div class="stat-sub">Annual per teacher</div>
+        </div>
+      </div>
+
+      <div class="chart-wrap-tall"><canvas id="chart-enrollment-shift"></canvas></div>
+
+      <div class="footnote" style="margin-top:20px;">
+        <strong>📊 How to Read This Chart</strong>
+        The bars show total district cost under different enrollment levels at your selected split. More teachers enrolling in HMO Blue Advantage Family = more district spend on that plan, but the pool benefit for remaining teachers improves. Adjust enrollment projections in Step 2.
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6: PARAEDUCATOR COMPARISON -->
+  <div class="section">
+    <div class="section-label">Section 6 · Para Model Comparison</div>
+    <div class="card">
+      <div class="card-title">Paraeducator Contract — A Proven Template</div>
+      <div class="card-subtitle">The paraeducator contract (2025–2029) already uses a percentage-based model for HMO Blue Advantage Family. This is your best bargaining precedent.</div>
+      <div class="grid-2">
+        <div>
+          <table class="comp-table">
+            <thead>
+              <tr>
+                <th>Provision</th>
+                <th>Para Contract</th>
+                <th>Proposed Teacher Contract</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="color:var(--text-dim)">HMO BA Family Method</td>
+                <td><span class="pill pill-teal">Fixed $ Contribution</span></td>
+                <td><span class="pill pill-gold">% of Premium</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Board Contribution (2025-26)</td>
+                <td class="mono">$1,350/month</td>
+                <td class="mono" id="para-comp-distMonth">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Annual Increase Mechanism</td>
+                <td>Up to 5% per year</td>
+                <td>Follows premium increase (automatic)</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Employee Monthly Cost</td>
+                <td class="mono">$573.18</td>
+                <td class="mono" id="para-comp-eeMonth">—</td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Predictability</td>
+                <td><span class="pill pill-teal">High (fixed $)</span></td>
+                <td><span class="pill pill-green">High (fixed %)</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text-dim)">Scales with Enrollment</td>
+                <td><span class="pill pill-red">No</span></td>
+                <td><span class="pill pill-green">Yes</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">Monthly employee cost comparison</div>
+          <div class="chart-wrap-tall"><canvas id="chart-para-compare"></canvas></div>
+          <div class="insight" style="margin-top:12px;">
+            <strong>💡 Bargaining Argument</strong>
+            The Board already accepted a percentage-based model for paras. Extending the same logic to certified staff is a natural, defensible ask. The structure is already in place — this is simply applying it to a different bargaining unit.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    D100 · South Berwyn Education Association · Internal Bargaining Tool · 2025–2026 ·
+    <strong style="color:var(--gold);">Sample Data — Replace with Actual D100 Premium Figures</strong>
+  </footer>
+
+</div><!-- /container -->
+
+<script>
+// =========================================================
+// CHART INSTANCES (for destroy/rebuild)
+// =========================================================
+let charts = {};
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+// =========================================================
+// UTILITY
+// =========================================================
+function fmt(val, decimals=2) {
+  return '$' + Number(val).toLocaleString('en-US', {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+}
+
+function fmtDelta(val) {
+  const abs = Math.abs(val);
+  const str = '$' + abs.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  if (val > 0) return '<span class="delta-pos">+' + str + '</span>';
+  if (val < 0) return '<span class="delta-neg">−' + str + '</span>';
+  return '<span style="color:var(--text-dim)">$0.00</span>';
+}
+
+// =========================================================
+// INPUTS
+// =========================================================
+function getInputs() {
+  return {
+    hmoFamPremium:    parseFloat(document.getElementById('inp-hmoFamPremium').value) || 1923.18,
+    poolTotal:        parseFloat(document.getElementById('inp-poolTotal').value) || 150000,
+    totalFam:         parseInt(document.getElementById('inp-totalFam').value) || 53,
+    hmoFamCount:      parseInt(document.getElementById('inp-hmoFamCount').value) || 13,
+    pays:             parseInt(document.getElementById('inp-pays').value) || 24,
+    ppoFam:           parseFloat(document.getElementById('inp-ppoFam').value) || 3312.16,
+    ppoFamCount:      parseInt(document.getElementById('inp-ppoFamCount').value) || 0,
+    hmoILFam:         parseFloat(document.getElementById('inp-hmoILFam').value) || 2165.09,
+    hmoILFamCount:    parseInt(document.getElementById('inp-hmoILFamCount').value) || 2,
+    hmoFamCountNew:   parseInt(document.getElementById('inp-hmoFamCountNew').value) || 20,
+    remainPoolNew:    parseInt(document.getElementById('inp-remainPoolNew').value) || 33,
+    distPct:          parseInt(document.getElementById('splitSlider').value) || 80,
+  };
+}
+
+// =========================================================
+// SLIDER
+// =========================================================
+function onSlider(val) {
+  document.getElementById('distPctDisplay').textContent = val;
+  document.getElementById('eePctDisplay').textContent = 100 - val;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  recalcAll();
+}
+
+function setPreset(val) {
+  document.getElementById('splitSlider').value = val;
+  onSlider(val);
+  document.querySelectorAll('.preset-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.textContent) === val);
+  });
+}
+
+// =========================================================
+// TABS
+// =========================================================
+function switchTab(id) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    const panels = document.querySelectorAll('.tab-panel');
+    b.classList.toggle('active', 'tab-' + ['current','scenarios','chart'][i] === id);
+    panels[i].classList.toggle('active', 'tab-' + ['current','scenarios','chart'][i] === id);
+  });
+  // rebuild charts if switching to chart tab
+  if (id === 'tab-chart') buildScenarioCharts();
+}
+
+// =========================================================
+// MAIN RECALC
+// =========================================================
+function recalcAll() {
+  const d = getInputs();
+
+  const premium = d.hmoFamPremium;
+  const annualPremium = premium * 12;
+  const distFrac = d.distPct / 100;
+  const eeFrac = 1 - distFrac;
+
+  // CURRENT POOL SYSTEM
+  const poolPerTeacherYear = d.poolTotal / d.totalFam;
+  const poolPerTeacherMonth = poolPerTeacherYear / 12;
+  const curEEYear = annualPremium - poolPerTeacherYear;
+  const curEEMonth = curEEYear / 12;
+  const curEEPaycheck = curEEYear / d.pays;
+  // District effectively pays pool share per HMO BA teacher
+  const distCurrentTotal = (poolPerTeacherYear * d.hmoFamCount); // pool portion allocated to these 13
+
+  // PROPOSED % SYSTEM
+  const propDistMonth = premium * distFrac;
+  const propEEMonth = premium * eeFrac;
+  const propDistYear = propDistMonth * 12;
+  const propEEYear = propEEMonth * 12;
+  const propEEPaycheck = propEEYear / d.pays;
+  const propDistTotal13 = propDistYear * d.hmoFamCount;
+
+  // DELTAS (per teacher, positive = teacher saves)
+  const deltaYear = curEEYear - propEEYear;
+  const deltaMonth = curEEMonth - propEEMonth;
+  const deltaPaycheck = curEEPaycheck - propEEPaycheck;
+
+  // POOL RIPPLE (remaining after HMO BA carved out)
+  const remainPool = d.totalFam - d.hmoFamCount;
+  const newPoolPerYear = remainPool > 0 ? d.poolTotal / remainPool : 0;
+  const newPoolPerMonth = newPoolPerYear / 12;
+
+  // ENROLLMENT SHIFT
+  const shiftDistTotal = propDistYear * d.hmoFamCountNew;
+  const shiftRemainPoolBenefit = d.remainPoolNew > 0 ? d.poolTotal / d.remainPoolNew : 0;
+
+  // ---- KPI ROW ----
+  document.getElementById('kpi-totalPremium').textContent = fmt(premium);
+  document.getElementById('kpi-distMonth').textContent = fmt(propDistMonth);
+  document.getElementById('kpi-distPct').textContent = d.distPct + '% of premium';
+  document.getElementById('kpi-eeMonth').textContent = fmt(propEEMonth);
+  document.getElementById('kpi-eePct').textContent = eeFrac*100 + '% of premium';
+  document.getElementById('kpi-eePaycheck').textContent = fmt(propEEPaycheck);
+  document.getElementById('kpi-paysSub').textContent = d.pays + ' pays/year';
+
+  // ---- CURRENT TAB ----
+  document.getElementById('cur-poolSize').textContent = fmt(d.poolTotal, 0);
+  document.getElementById('cur-poolPart').textContent = d.totalFam + ' teachers';
+  document.getElementById('cur-poolBenYear').textContent = fmt(poolPerTeacherYear);
+  document.getElementById('cur-poolBenMonth').textContent = fmt(poolPerTeacherMonth);
+  document.getElementById('cur-annualPremium').textContent = fmt(annualPremium);
+  document.getElementById('cur-eeYear').textContent = fmt(curEEYear);
+  document.getElementById('cur-eeMonth').textContent = fmt(curEEMonth);
+  document.getElementById('cur-eePaycheck').textContent = fmt(curEEPaycheck);
+
+  document.getElementById('prop-distPct').textContent = d.distPct + '%';
+  document.getElementById('prop-eePct').textContent = (100-d.distPct) + '%';
+  document.getElementById('prop-annualPremium').textContent = fmt(annualPremium);
+  document.getElementById('prop-distYear').textContent = fmt(propDistYear);
+  document.getElementById('prop-distMonth').textContent = fmt(propDistMonth);
+  document.getElementById('prop-eeYear').textContent = fmt(propEEYear);
+  document.getElementById('prop-eeMonth').textContent = fmt(propEEMonth);
+  document.getElementById('prop-eePaycheck').textContent = fmt(propEEPaycheck);
+
+  document.getElementById('delta-year').innerHTML = fmtDelta(deltaYear) + '/yr';
+  document.getElementById('delta-month').innerHTML = fmtDelta(deltaMonth) + '/mo';
+  document.getElementById('delta-paycheck').innerHTML = fmtDelta(deltaPaycheck) + '/paycheck';
+
+  // ---- SCENARIOS TABLE ----
+  buildScenariosTable(d, premium, annualPremium, curEEYear, curEEMonth, curEEPaycheck);
+
+  // ---- DISTRICT COST ----
+  document.getElementById('dist-currentTotal').textContent = fmt(distCurrentTotal);
+  document.getElementById('dist-proposedTotal').textContent = fmt(propDistTotal13);
+  document.getElementById('dist-proposedSub').textContent = d.distPct + '% × ' + d.hmoFamCount + ' teachers';
+  const distDelta = propDistTotal13 - distCurrentTotal;
+  const distDeltaText = distDelta >= 0
+    ? `Under this scenario, the district would spend ${fmt(Math.abs(distDelta))} MORE annually on HMO BA Family vs. the current pool allocation to these ${d.hmoFamCount} teachers.`
+    : `Under this scenario, the district would spend ${fmt(Math.abs(distDelta))} LESS annually on HMO BA Family vs. the current pool allocation to these ${d.hmoFamCount} teachers.`;
+  document.getElementById('dist-delta-text').textContent = distDeltaText;
+
+  // ---- POOL RIPPLE ----
+  document.getElementById('pool-old').textContent = fmt(poolPerTeacherYear);
+  document.getElementById('pool-new').textContent = fmt(newPoolPerYear);
+  document.getElementById('pool-new-sub').textContent = 'Annual · ' + remainPool + ' remaining participants';
+  const poolGain = newPoolPerYear - poolPerTeacherYear;
+  document.getElementById('pool-ripple-text').textContent =
+    `Carving out the ${d.hmoFamCount} HMO BA Family teachers from the pool means the remaining ${remainPool} teachers now share $${d.poolTotal.toLocaleString()} — a per-teacher improvement of ${fmt(poolGain)}/year (${fmt(poolGain/12)}/month).`;
+
+  // ---- ENROLLMENT SHIFT ----
+  document.getElementById('shift-currentEnroll').textContent = d.hmoFamCount;
+  document.getElementById('shift-newEnroll').textContent = d.hmoFamCountNew;
+  const distIncrease = (propDistYear * d.hmoFamCountNew) - distCurrentTotal;
+  document.getElementById('shift-distIncrease').innerHTML = fmtDelta(-distIncrease) === fmtDelta(0) ? fmt(0) : (distIncrease >= 0 ? '<span style="color:#f87171">+' + fmt(distIncrease) + '</span>' : '<span style="color:var(--green)">−' + fmt(Math.abs(distIncrease)) + '</span>');
+  document.getElementById('shift-poolBenefit').textContent = fmt(shiftRemainPoolBenefit);
+
+  // ---- PARA COMPARE ----
+  const paraDistMonth = 1350;
+  const paraEEMonth = premium - paraDistMonth;
+  document.getElementById('para-comp-distMonth').textContent = fmt(propDistMonth) + '/month';
+  document.getElementById('para-comp-eeMonth').textContent = fmt(propEEMonth);
+
+  // ---- CHARTS ----
+  buildDistCompareChart(distCurrentTotal, propDistTotal13);
+  buildPoolRippleChart(d, poolPerTeacherYear, newPoolPerYear, remainPool);
+  buildEnrollmentShiftChart(d, propDistYear, poolPerTeacherYear);
+  buildParaCompareChart(premium, paraEEMonth, propEEMonth, curEEMonth, d.distPct);
+  buildDoughnutChart(d.distPct, premium);
+}
+
+// =========================================================
+// SCENARIOS TABLE
+// =========================================================
+function buildScenariosTable(d, premium, annualPremium, curEEYear, curEEMonth, curEEPaycheck) {
+  const splits = [100, 95, 90, 85, 80, 75, 70, 65, 60];
+  const tbody = document.getElementById('scenarios-tbody');
+  tbody.innerHTML = '';
+
+  // Current pool row
+  const curRow = document.createElement('tr');
+  curRow.style.background = 'rgba(244,168,32,0.06)';
+  curRow.innerHTML = `
+    <td><span class="pill pill-gold">CURRENT POOL</span></td>
+    <td class="mono">$${(d.poolTotal/d.totalFam/12).toFixed(2)}/mo benefit</td>
+    <td class="mono" style="color:#f87171">${fmt(curEEMonth)}</td>
+    <td class="mono" style="color:#f87171">${fmt(curEEYear)}</td>
+    <td class="mono" style="color:#f87171">${fmt(curEEYear/d.pays)}</td>
+    <td class="center">—</td>
+    <td></td>
+  `;
+  tbody.appendChild(curRow);
+
+  splits.forEach(pct => {
+    const distM = premium * pct/100;
+    const eeM = premium * (1-pct/100);
+    const eeY = eeM * 12;
+    const eeP = eeY / d.pays;
+    const delta = curEEYear - eeY;
+    const isActive = pct === d.distPct;
+
+    const tr = document.createElement('tr');
+    if (isActive) tr.style.background = 'rgba(0,180,216,0.08)';
+    tr.innerHTML = `
+      <td>
+        ${isActive ? '<span class="pill pill-teal">▶ SELECTED</span> ' : ''}
+        <strong>${pct}/${100-pct}</strong>
+      </td>
+      <td class="mono">${fmt(distM)}</td>
+      <td class="mono" style="color:${delta>0?'var(--green)':'#f87171'}">${fmt(eeM)}</td>
+      <td class="mono" style="color:${delta>0?'var(--green)':'#f87171'}">${fmt(eeY)}</td>
+      <td class="mono" style="color:${delta>0?'var(--green)':'#f87171'}">${fmt(eeP)}</td>
+      <td class="center">${fmtDelta(delta)}</td>
+      <td>${delta > 0 ? '<span class="pill pill-green">SAVES</span>' : delta < 0 ? '<span class="pill pill-red">COSTS MORE</span>' : ''}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// =========================================================
+// CHART: BAR — Scenarios
+// =========================================================
+function buildScenarioCharts() {
+  const d = getInputs();
+  const premium = d.hmoFamPremium;
+  const splits = [100, 95, 90, 85, 80, 75, 70, 65, 60];
+  const labels = splits.map(p => p + '/' + (100-p));
+  const eeMonths = splits.map(p => +(premium * (1-p/100)).toFixed(2));
+  const curEEMonth = +(premium - d.poolTotal/d.totalFam/12).toFixed(2);
+  const activeIdx = splits.indexOf(d.distPct);
+
+  const bgColors = splits.map((p, i) =>
+    i === activeIdx ? 'rgba(0,180,216,0.8)' : 'rgba(0,180,216,0.25)'
+  );
+
+  destroyChart('bar-scenarios');
+  const ctx = document.getElementById('chart-bar-scenarios').getContext('2d');
+  charts['bar-scenarios'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Employee Monthly Cost (Proposed)',
+          data: eeMonths,
+          backgroundColor: bgColors,
+          borderRadius: 6,
+        },
+        {
+          label: 'Current Pool System',
+          data: new Array(splits.length).fill(curEEMonth < 0 ? 0 : curEEMonth),
+          type: 'line',
+          borderColor: 'rgba(244,168,32,0.8)',
+          borderWidth: 2,
+          borderDash: [6,3],
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#94a3b8', font: { family: 'Outfit', size: 12 } } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ' ' + ctx.dataset.label + ': $' + ctx.raw.toFixed(2)
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(0,180,216,0.05)' } },
+        y: {
+          ticks: { color: '#94a3b8', callback: v => '$' + v.toLocaleString() },
+          grid: { color: 'rgba(0,180,216,0.08)' }
+        }
+      }
+    }
+  });
+}
+
+// =========================================================
+// CHART: DOUGHNUT — Premium Split
+// =========================================================
+function buildDoughnutChart(distPct, premium) {
+  destroyChart('doughnut');
+  const ctx = document.getElementById('chart-doughnut').getContext('2d');
+  const distM = +(premium * distPct/100).toFixed(2);
+  const eeM = +(premium * (1-distPct/100)).toFixed(2);
+  charts['doughnut'] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['District Pays', 'Employee Pays'],
+      datasets: [{
+        data: [distM, eeM],
+        backgroundColor: ['rgba(244,168,32,0.8)', 'rgba(239,68,68,0.7)'],
+        borderColor: ['rgba(244,168,32,1)', 'rgba(239,68,68,1)'],
+        borderWidth: 2,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Outfit', size: 13 }, padding: 16 } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ' $' + ctx.raw.toFixed(2) + '/month (' + (ctx.raw/premium*100).toFixed(1) + '%)'
+          }
+        }
+      }
+    },
+    plugins: [{
+      id: 'centerText',
+      beforeDraw(chart) {
+        const { ctx, chartArea: {top, bottom, left, right} } = chart;
+        ctx.save();
+        ctx.font = 'bold 20px DM Mono';
+        ctx.fillStyle = '#f0f4f8';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('$' + premium.toFixed(0), (left+right)/2, (top+bottom)/2 - 10);
+        ctx.font = '12px Outfit';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText('monthly', (left+right)/2, (top+bottom)/2 + 14);
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+// =========================================================
+// CHART: BAR — District Compare
+// =========================================================
+function buildDistCompareChart(curTotal, propTotal) {
+  destroyChart('dist-compare');
+  const ctx = document.getElementById('chart-dist-compare').getContext('2d');
+  charts['dist-compare'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Current (Pool Allocation)', 'Proposed (% Split)'],
+      datasets: [{
+        data: [curTotal, propTotal],
+        backgroundColor: ['rgba(244,168,32,0.6)', 'rgba(0,180,216,0.6)'],
+        borderColor: ['rgba(244,168,32,1)', 'rgba(0,180,216,1)'],
+        borderWidth: 2,
+        borderRadius: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => ' $' + ctx.raw.toLocaleString('en-US', {minimumFractionDigits:2}) } }
+      },
+      scales: {
+        x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+        y: { ticks: { color: '#94a3b8', callback: v => '$' + v.toLocaleString() }, grid: { color: 'rgba(0,180,216,0.08)' } }
+      }
+    }
+  });
+}
+
+// =========================================================
+// CHART: POOL RIPPLE
+// =========================================================
+function buildPoolRippleChart(d, oldBen, newBen, remainPool) {
+  destroyChart('pool-ripple');
+  const ctx = document.getElementById('chart-pool-ripple').getContext('2d');
+  // Show pool benefit vs number of participants
+  const counts = [53, 50, 45, 40, 35, 30, 25, 20];
+  const benefits = counts.map(n => +(d.poolTotal / n).toFixed(2));
+  const highlightColors = counts.map(n => {
+    if (n === d.totalFam) return 'rgba(244,168,32,0.8)';
+    if (n === remainPool) return 'rgba(34,197,94,0.8)';
+    return 'rgba(0,180,216,0.3)';
+  });
+
+  charts['pool-ripple'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: counts.map(n => n + ' teachers'),
+      datasets: [{
+        label: 'Annual Pool Benefit per Teacher',
+        data: benefits,
+        backgroundColor: highlightColors,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ' $' + ctx.raw.toLocaleString('en-US', {minimumFractionDigits:2}) + '/year' } }
+      },
+      scales: {
+        x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+        y: { ticks: { color: '#94a3b8', callback: v => '$' + v.toLocaleString() }, grid: { color: 'rgba(0,180,216,0.08)' } }
+      }
+    }
+  });
+}
+
+// =========================================================
+// CHART: ENROLLMENT SHIFT
+// =========================================================
+function buildEnrollmentShiftChart(d, propDistYearPerTeacher, poolBenPerTeacherYearOld) {
+  destroyChart('enrollment-shift');
+  const ctx = document.getElementById('chart-enrollment-shift').getContext('2d');
+  const enrollLevels = [13, 15, 18, 20, 22, 25, 30];
+  const distCosts = enrollLevels.map(n => +(propDistYearPerTeacher * n).toFixed(2));
+  const poolBenefits = enrollLevels.map(n => {
+    const remaining = d.totalFam - n > 0 ? d.totalFam - n : 1;
+    return +(d.poolTotal / remaining).toFixed(2);
+  });
+
+  charts['enrollment-shift'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: enrollLevels.map(n => n + ' teachers'),
+      datasets: [
+        {
+          label: 'District Annual Cost (HMO BA Family)',
+          data: distCosts,
+          backgroundColor: 'rgba(244,168,32,0.6)',
+          borderColor: 'rgba(244,168,32,1)',
+          borderWidth: 1,
+          borderRadius: 6,
+          yAxisID: 'y1',
+        },
+        {
+          label: 'Pool Benefit (Remaining Teachers)',
+          data: poolBenefits,
+          type: 'line',
+          borderColor: 'rgba(34,197,94,0.9)',
+          backgroundColor: 'rgba(34,197,94,0.1)',
+          borderWidth: 2,
+          pointRadius: 5,
+          fill: true,
+          yAxisID: 'y2',
+          tension: 0.3,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#94a3b8', font: { family: 'Outfit', size: 12 } } },
+        tooltip: { callbacks: { label: ctx => ' $' + ctx.raw.toLocaleString('en-US', {minimumFractionDigits:2}) } }
+      },
+      scales: {
+        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(0,180,216,0.05)' } },
+        y1: {
+          position: 'left',
+          ticks: { color: '#f4a820', callback: v => '$' + (v/1000).toFixed(0) + 'k' },
+          grid: { color: 'rgba(0,180,216,0.08)' }
+        },
+        y2: {
+          position: 'right',
+          ticks: { color: '#22c55e', callback: v => '$' + v.toLocaleString() },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+// =========================================================
+// CHART: PARA COMPARE
+// =========================================================
+function buildParaCompareChart(premium, paraEEMonth, propEEMonth, curEEMonth, distPct) {
+  destroyChart('para-compare');
+  const ctx = document.getElementById('chart-para-compare').getContext('2d');
+  const paraEE = Math.max(0, premium - 1350);
+  charts['para-compare'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Current Teacher\n(Pool System)', 'Para Model\n($1,350 Board)', `Proposed Teacher\n(${distPct}% Board)`],
+      datasets: [{
+        label: 'Employee Monthly Cost',
+        data: [Math.max(0, curEEMonth), Math.max(0, paraEE), Math.max(0, propEEMonth)],
+        backgroundColor: [
+          'rgba(239,68,68,0.6)',
+          'rgba(0,180,216,0.5)',
+          'rgba(34,197,94,0.6)',
+        ],
+        borderColor: ['rgba(239,68,68,1)', 'rgba(0,180,216,1)', 'rgba(34,197,94,1)'],
+        borderWidth: 2,
+        borderRadius: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ' Employee pays $' + ctx.raw.toFixed(2) + '/month' } }
+      },
+      scales: {
+        x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+        y: { ticks: { color: '#94a3b8', callback: v => '$' + v.toLocaleString() }, grid: { color: 'rgba(0,180,216,0.08)' } }
+      }
+    }
+  });
+}
+
+// =========================================================
+// INIT
+// =========================================================
+document.addEventListener('DOMContentLoaded', () => {
+  recalcAll();
+  // Init charts tab (pre-build in background)
+  buildScenarioCharts();
+  buildDoughnutChart(80, 1923.18);
+});
+</script>
+</body>
+</html>
