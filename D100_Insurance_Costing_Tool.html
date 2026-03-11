@@ -2303,37 +2303,101 @@
       <div class="card-title">What Happens When More Teachers Switch to HMO Blue Advantage Family?</div>
       <div class="card-subtitle">Model projected enrollment changes and their downstream impact on both the HMO BA Family group and the remaining pool participants.</div>
 
-      <div class="grid-4" style="margin-bottom:24px;">
+      <!-- YEAR 1 BADGE -->
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(244,168,32,0.1);border:1px solid rgba(244,168,32,0.35);border-radius:20px;padding:5px 14px;margin-bottom:24px;">
+        <span style="font-size:13px;">📅</span>
+        <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold);">Year 1 Snapshot — <span id="shift-year1-desc">—</span></span>
+      </div>
+
+      <!-- ROW 1: ENROLLMENT -->
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;">Enrollment</div>
+      <div class="grid-4" style="margin-bottom:28px;">
         <div class="stat-box">
-          <div class="stat-label">Current HMO BA Fam Enrolled</div>
+          <div class="stat-label">Teachers Enrolled Today</div>
           <div class="stat-value mono" id="shift-currentEnroll">13</div>
-          <div class="stat-sub">At current contract</div>
+          <div class="stat-sub">HMO BA Family, current contract</div>
         </div>
         <div class="stat-box teal">
-          <div class="stat-label">Projected New Enrolled</div>
+          <div class="stat-label">Projected New Enrollment</div>
           <div class="stat-value mono" id="shift-newEnroll">—</div>
-          <div class="stat-sub">Under proposed system</div>
+          <div class="stat-sub">HMO BA Family, under proposal</div>
         </div>
-        <div class="stat-box gold">
-          <div class="stat-label">District Cost Increase</div>
-          <div class="stat-value mono" id="shift-distIncrease">—</div>
-          <div class="stat-sub">Annual, vs. current</div>
+        <div class="stat-box">
+          <div class="stat-label">Teachers Switching</div>
+          <div class="stat-value mono" id="shift-switching">—</div>
+          <div class="stat-sub">Additional teachers moving to plan</div>
         </div>
-        <div class="stat-box green">
-          <div class="stat-label">Pool Benefit (Remaining)</div>
-          <div class="stat-value mono" id="shift-poolBenefit">—</div>
-          <div class="stat-sub">Annual per teacher</div>
+        <div class="stat-box">
+          <div class="stat-label">Remaining Pool Teachers</div>
+          <div class="stat-value mono" id="shift-remaining-pool">—</div>
+          <div class="stat-sub">Still in pool after shift</div>
         </div>
       </div>
 
-      <div class="chart-wrap-tall"><canvas id="chart-enrollment-shift"></canvas></div>
+      <!-- ROW 2: TEACHER IMPACT -->
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;">Teacher Impact — Year 1</div>
+      <div class="grid-4" style="margin-bottom:28px;">
+        <div class="stat-box green">
+          <div class="stat-label">Each HMO BA Teacher Saves</div>
+          <div class="stat-value mono" id="shift-teacher-saves-year">—</div>
+          <div class="stat-sub">Per teacher, per year vs. today</div>
+        </div>
+        <div class="stat-box green">
+          <div class="stat-label">Monthly Savings</div>
+          <div class="stat-value mono" id="shift-teacher-saves-month">—</div>
+          <div class="stat-sub">Per teacher, per month</div>
+        </div>
+        <div class="stat-box green">
+          <div class="stat-label">Pool Benefit After Shift</div>
+          <div class="stat-value mono" id="shift-poolBenefit">—</div>
+          <div class="stat-sub">Annual per remaining pool teacher</div>
+        </div>
+        <div class="stat-box green">
+          <div class="stat-label">Pool Benefit Gain</div>
+          <div class="stat-value mono" id="shift-pool-gain">—</div>
+          <div class="stat-sub">Improvement vs. today's $2,830/yr</div>
+        </div>
+      </div>
 
-      <!-- X-axis label -->
+      <!-- ROW 3: DISTRICT COST DECOMPOSED -->
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;">District Cost — Year 1</div>
+      <div class="grid-4" style="margin-bottom:28px;">
+        <div class="stat-box gold">
+          <div class="stat-label">District Cost Today</div>
+          <div class="stat-value mono" id="shift-dist-current">—</div>
+          <div class="stat-sub">Annual · 13 teachers · current rate</div>
+        </div>
+        <div class="stat-box gold">
+          <div class="stat-label">Cost at Same Enrollment</div>
+          <div class="stat-value mono" id="shift-dist-same">—</div>
+          <div class="stat-sub">Annual · still 13 teachers · new rate</div>
+        </div>
+        <div class="stat-box gold">
+          <div class="stat-label">Cost at New Enrollment</div>
+          <div class="stat-value mono" id="shift-dist-new">—</div>
+          <div class="stat-sub">Annual · <span id="shift-new-count-label">—</span> teachers · new rate</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Total Cost Change</div>
+          <div class="stat-value mono" id="shift-distIncrease">—</div>
+          <div class="stat-sub" id="shift-distIncrease-sub">vs. current annual spend</div>
+        </div>
+      </div>
+
+      <!-- PLAIN ENGLISH NARRATIVE -->
+      <div style="background:rgba(0,180,216,0.06);border:1px solid rgba(0,180,216,0.15);border-left:3px solid var(--teal);border-radius:var(--radius-sm);padding:20px 24px;margin-bottom:24px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--teal);margin-bottom:10px;">📖 In Plain English</div>
+        <div id="shift-narrative" style="font-size:14px;color:var(--white);line-height:1.8;"></div>
+        <div id="shift-fixed-note" style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,180,216,0.15);font-size:12px;color:var(--text-dim);"></div>
+      </div>
+
+      <!-- CHART -->
+      <div class="chart-wrap-tall"><canvas id="chart-enrollment-shift"></canvas></div>
       <div style="text-align:center;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin-top:6px;">
         Number of Teachers Enrolled in HMO Blue Advantage Family (Proposed Plan)
       </div>
 
-      <!-- Dynamic data table -->
+      <!-- DATA TABLE -->
       <div style="margin-top:24px;">
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;">Enrollment Scenario Data Table</div>
         <div style="overflow-x:auto;">
@@ -2348,16 +2412,14 @@
                 <th>Pool Benefit<br>per Month</th>
               </tr>
             </thead>
-            <tbody id="enroll-table-body">
-              <!-- populated by JS -->
-            </tbody>
+            <tbody id="enroll-table-body"></tbody>
           </table>
         </div>
       </div>
 
       <div class="footnote" style="margin-top:20px;">
         <strong>📊 How to Read This Chart & Table</strong>
-        Each column represents a scenario where a different number of teachers enroll in HMO Blue Advantage Family under the proposed plan. The current enrollment is <strong>13 teachers</strong> (leftmost bar). As more teachers switch to the proposed plan, the district's total cost for that plan rises — but the pool's $150,000 is divided among fewer remaining teachers, so each one receives a larger annual benefit. Adjust enrollment projections in Step 2.
+        Each column represents a scenario where a different number of teachers enroll in HMO Blue Advantage Family under the proposed plan. The current enrollment is <strong>13 teachers</strong> (leftmost bar). As more teachers switch to the proposed plan, the district's total cost for that plan rises — but the pool's $150,000 is divided among fewer remaining teachers, so each one receives a larger annual benefit. <strong style="color:var(--gold);">All figures reflect Year 1 of the proposed contract only.</strong> Under a fixed dollar contribution, employee costs will increase in Years 2 and 3 as premiums rise faster than the capped district contribution.
       </div>
     </div>
   </div>
@@ -2656,11 +2718,77 @@ function recalcAll() {
   // ---- ENROLLMENT SHIFT ----
   document.getElementById('shift-currentEnroll').textContent = d.hmoFamCount;
   document.getElementById('shift-newEnroll').textContent = d.hmoFamCountNew;
-  const distIncrease = (propDistYear * d.hmoFamCountNew) - distCurrentTotal;
-  document.getElementById('shift-distIncrease').innerHTML = distIncrease >= 0
-    ? '<span style="color:#f87171">+' + fmt(distIncrease) + '</span>'
-    : '<span style="color:var(--green)">−' + fmt(Math.abs(distIncrease)) + '</span>';
+
+  const switching = d.hmoFamCountNew - d.hmoFamCount;
+  document.getElementById('shift-switching').textContent = switching > 0 ? '+' + switching : switching;
+
+  const remainingPool = d.totalFam - d.hmoFamCountNew;
+  document.getElementById('shift-remaining-pool').textContent = Math.max(0, remainingPool);
+
+  // Year 1 badge description
+  const yr1Desc = currentMode === 'fixed'
+    ? `Fixed $${fmt(propDistMonth)}/mo District Contribution`
+    : `${d.distPct}% / ${100-d.distPct}% Split`;
+  document.getElementById('shift-year1-desc').textContent = yr1Desc;
+
+  // Teacher savings vs. current pool cost (Year 1)
+  const teacherSavesYear = curEEYear - propEEYear;
+  const teacherSavesMonth = curEEMonth - propEEMonth;
+  document.getElementById('shift-teacher-saves-year').innerHTML =
+    `<span style="color:${teacherSavesYear >= 0 ? 'var(--green)' : '#f87171'}">${fmtDelta(teacherSavesYear)}</span>`;
+  document.getElementById('shift-teacher-saves-month').innerHTML =
+    `<span style="color:${teacherSavesMonth >= 0 ? 'var(--green)' : '#f87171'}">${fmtDelta(teacherSavesMonth)}</span>`;
+
+  // Pool benefit after shift
+  const shiftRemainPoolBenefit = remainingPool > 0 ? d.poolTotal / remainingPool : 0;
+  const poolGainVsToday = shiftRemainPoolBenefit - (d.poolTotal / d.totalFam);
   document.getElementById('shift-poolBenefit').textContent = fmt(shiftRemainPoolBenefit);
+  document.getElementById('shift-pool-gain').innerHTML =
+    `<span style="color:var(--green)">${fmtDelta(poolGainVsToday)}/yr</span>`;
+
+  // District cost — decomposed
+  const distCostToday = districtNonSingleMonth * 12 * d.hmoFamCount;
+  const distCostSameEnroll = propDistYear * d.hmoFamCount;
+  const distCostNewEnroll = propDistYear * d.hmoFamCountNew;
+  const totalCostChange = distCostNewEnroll - distCostToday;
+
+  document.getElementById('shift-dist-current').textContent = '$' + distCostToday.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+  document.getElementById('shift-dist-same').textContent = '$' + distCostSameEnroll.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+  document.getElementById('shift-dist-new').textContent = '$' + distCostNewEnroll.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+  document.getElementById('shift-new-count-label').textContent = d.hmoFamCountNew;
+  document.getElementById('shift-distIncrease').innerHTML = totalCostChange >= 0
+    ? `<span style="color:#f4a820">+${fmt(totalCostChange)}</span>`
+    : `<span style="color:var(--green)">−${fmt(Math.abs(totalCostChange))}</span>`;
+  document.getElementById('shift-distIncrease-sub').textContent =
+    `vs. current annual spend · includes ${switching > 0 ? switching + ' new enrollees' : 'same enrollment'}`;
+
+  // Plain English narrative
+  const rateOnlyIncrease = distCostSameEnroll - distCostToday;
+  const enrollIncrease = distCostNewEnroll - distCostSameEnroll;
+  const narrativeEl = document.getElementById('shift-narrative');
+  narrativeEl.innerHTML = `
+    Under this proposal, each of the <strong style="color:var(--white)">${d.hmoFamCountNew} teachers</strong> enrolled in HMO Blue Advantage Family would pay
+    <strong style="color:var(--green)">$${fmt(propEEMonth)}/month</strong> in Year 1 —
+    a savings of <strong style="color:var(--green)">${fmtDelta(teacherSavesMonth)}/month</strong>
+    (${fmtDelta(teacherSavesYear)}/year) compared to what they pay today under the pool system.<br><br>
+    For the <strong style="color:var(--white)">${Math.max(0,remainingPool)} teachers</strong> who remain in the pool,
+    the $150,000 pool benefit is now shared among fewer people —
+    increasing their annual pool benefit to <strong style="color:var(--green)">$${fmt(shiftRemainPoolBenefit)}</strong>
+    (up ${fmtDelta(poolGainVsToday)}/year from today's $2,830).<br><br>
+    The district's total annual cost for HMO BA Family would be
+    <strong style="color:var(--gold)">$${distCostNewEnroll.toLocaleString('en-US',{maximumFractionDigits:0})}</strong>.
+    Of that increase, <strong>$${Math.abs(rateOnlyIncrease).toLocaleString('en-US',{maximumFractionDigits:0})}</strong> comes from
+    the higher contribution rate (same 13 teachers), and
+    <strong>$${Math.abs(enrollIncrease).toLocaleString('en-US',{maximumFractionDigits:0})}</strong> comes from
+    ${switching} additional teachers enrolling.
+  `;
+
+  const fixedNoteEl = document.getElementById('shift-fixed-note');
+  if (currentMode === 'fixed') {
+    fixedNoteEl.innerHTML = `⚠️ <strong style="color:var(--gold)">Year 1 only.</strong> Under a fixed dollar contribution with a ${d.fixedPct}% annual cap, the district's contribution grows by up to ${d.fixedPct}% per year. If premiums rise faster than ${d.fixedPct}%/year, employee costs will increase in Years 2 and 3. See Step 2's multi-year table for the full projection.`;
+  } else {
+    fixedNoteEl.innerHTML = '';
+  }
 
   // ---- PARA COMPARE ----
   const paraEEMonth = Math.max(0, premium - 1350);
